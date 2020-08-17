@@ -1,0 +1,122 @@
+
+
+[
+    {
+        "key": "group_5f37b3dbe1519",
+        "title": "Configuraciones Importantes",
+        "fields": [
+            {
+                "key": "field_5f37b428b18fb",
+                "label": "Api Key Google Maps",
+                "name": "api_key_google_maps",
+                "type": "text",
+                "instructions": "Ingrese su api key google maps necesaria para la obtencion de mapas",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "YOUR_API_KEY",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f37b4e3b18fd",
+                "label": "Clave del Cliente WooComerce(REST API)",
+                "name": "consumer_key",
+                "type": "text",
+                "instructions": "Ingrese su Clave de Cliente Woocommerce REST API",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "ck_xxxxxxxxxxxxxxxx",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f37b4d6b18fc",
+                "label": "Clave Secreta del ClienteWooComerce(REST API)",
+                "name": "consumer_secret",
+                "type": "text",
+                "instructions": "Ingrese su Clave Secreta del Cliente WooComerce(REST API)",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "placeholder": "cs_xxxxxxxxxxxxxxxx",
+                "prepend": "",
+                "append": "",
+                "maxlength": ""
+            },
+            {
+                "key": "field_5f37d3fdb9437",
+                "label": "Latitud de la Tienda",
+                "name": "latitud_tienda",
+                "type": "text",
+                "instructions": "Ingrese la Latitud de la Tienda(Coordenada)",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            },
+            {
+                "key": "field_5f37d45db9438",
+                "label": "Longitud de la Tienda",
+                "name": "longitud_tienda",
+                "type": "text",
+                "instructions": "Ingrese la Longitud de la Tienda(Coordenada)",
+                "required": 1,
+                "conditional_logic": 0,
+                "wrapper": {
+                    "width": "",
+                    "class": "",
+                    "id": ""
+                },
+                "default_value": "",
+                "maxlength": "",
+                "placeholder": "",
+                "prepend": "",
+                "append": ""
+            }
+        ],
+        "location": [
+            [
+                {
+                    "param": "post_type",
+                    "operator": "==",
+                    "value": "max_functions_config"
+                }
+            ]
+        ],
+        "menu_order": 0,
+        "position": "normal",
+        "style": "default",
+        "label_placement": "top",
+        "instruction_placement": "label",
+        "hide_on_screen": "",
+        "active": true,
+        "description": "Configuraciones importantes para uso del plugin"
+    }
+]
