@@ -1,0 +1,12 @@
+{
+    "name": "maximo/max_functions",
+    "authors": [
+        {
+            "name": "Maximo Junior Apaza Chirhuana",
+            "email": "maximopeoficiales@gmail.com"
+        }
+    ],
+    "require": {
+        "automattic/woocommerce": "^3.0"
+    }
+}

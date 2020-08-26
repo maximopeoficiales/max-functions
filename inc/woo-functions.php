@@ -1,4 +1,7 @@
 <?php
+
+use Automattic\WooCommerce\Client;
+
 function getDataConfig()
 {
      $args = array(
@@ -19,14 +22,29 @@ function getDataConfig()
      endwhile;
      return $data;
 }
-
+function max_functions_getWoocommerce()
+{
+     $credenciales = getDataConfig();
+     $woocommerce = new Client(
+          get_site_url(),
+          $credenciales["consumer_key"],
+          $credenciales["consumer_secret"],
+          [
+               'version' => 'wc/v3',
+          ]
+     );
+     return $woocommerce;
+}
 function max_functions_get_current_user()
 {
+
      //Los filtros predeterminados usan esto para determinar el usuario actual a partir de las cookies de la solicitud, si están disponibles.
      $user_id = apply_filters('determine_current_user', false);
      /* $user_data = get_userdata($user_id); */
+
      return [
           'user_id' => $user_id,
+
      ];
 }
 add_action("rest_api_init", function () {
@@ -37,18 +55,12 @@ add_action("rest_api_init", function () {
      ));
 });
 
-?>
-
-
-<?php
 // template ojito del pedido 
 add_action('admin_footer', 'order_preview_template');
 function order_preview_template()
 {
      $data = getDataConfig();
      if ($data["api_key_google_maps"] != "") {
-          # code...
-
 ?>
           <style>
                @media(max-width: 768px) {
@@ -168,8 +180,11 @@ function order_preview_template()
 							<!-- se agrego validacion para cuando no hayan datos de mapa -->			
                                    <?php do_action('woocommerce_admin_order_preview_end'); ?>
                                    <?php if ($data["api_key_google_maps"] != "") { ?>
-							<# if ( data.data.meta_data.length > 1 ) { #>
+                                       
+                                   <# if( data.data.meta_data.length > 1 ) { #>
+                                        <# if(data.data.meta_data[2].key=="ce_latitud"){#>
 							<img src="https://maps.googleapis.com/maps/api/staticmap?center={{data.data.meta_data[2].value}},{{data.data.meta_data[3].value}}&zoom=16&size=600x500&markers=color:red%7C{{data.data.meta_data[2].value}},{{data.data.meta_data[3].value}}&key=<?php echo $data["api_key_google_maps"]; ?>" width="100%" height="400px" alt="imagen_mapa">
+                                   <# } #>      
                                    <# } #>
                                    <?php } ?>
 						</article>
@@ -198,284 +213,227 @@ add_action('woocommerce_admin_order_data_after_shipping_address', 'action_woocom
 function action_woocommerce_admin_order_data_after_shipping_address()
 {
      $data = getDataConfig();
+     $woocommerce = max_functions_getWoocommerce();
+     $func = function ($e) {
+          if ($e->key == "ce_longitud") {
+               return $e;
+          }
+     };
      if ($data["api_key_google_maps"] != "") {
-          # code...
 ?>
           <?php if (!$_GET["post_type"]) {
+               $id_order = $_GET["post"];
+               $order = $woocommerce->get("orders/$id_order");
+               if (!strpos($order->created_via, "ywraq")) {
+                    $coordenadas = array();
+                    foreach ($order->meta_data as $e) {
+                         if ($e->key == "ce_latitud") {
+                              array_push($coordenadas, $e);
+                         }
+                         if ($e->key == "ce_longitud") {
+                              array_push($coordenadas, $e);
+                         }
+                    }
+                    $latitud = $coordenadas[0]->value;
+                    $longitud = $coordenadas[1]->value;
+                    $link_google = "https://maps.google.com/?q=" . $latitud . "," . $longitud;
           ?>
-               <!-- CAMPO url Gmaps -->
-               <p id="url_mapa"></p>
-              
-               <!-- campo url gmaps -->
-               <!-- bloque de codigo -->
-
-               <!-- estilos para el modal -->
-               <style>
-                    * {
-                         margin: 0;
-                         padding: 0;
-                         box-sizing: border-box;
-                    }
-
-                    .flex {
-                         width: 100%;
-                         height: 100%;
-                         display: flex;
-                         justify-content: space-between;
-                         align-items: center;
-                    }
-
-                    .textos {
-                         padding: 300px;
-                         color: #fff;
-                         text-align: center;
-                    }
-
-                    .modal {
-                         display: none;
-                         position: fixed;
-                         z-index: 1;
-                         overflow: auto;
-                         left: 0;
-                         top: 0;
-                         width: 100%;
-                         height: 100%;
-                         background: rgba(0, 0, 0, 0.452);
-                    }
-
-                    .contenido-modal {
-                         position: relative;
-                         background-color: #fefefe;
-                         margin: auto;
-                         width: 60%;
-                         box-shadow: 0 0 6px 0 rgba(0, 0, 0, .4);
-                         animation-name: modal;
-                         animation-duration: 1s;
-                    }
-
-                    @keyframes modal {
-                         from {
-                              top: -330px;
-                              opacity: 0;
+                    <!-- CAMPO url Gmaps -->
+                    <p id="url_mapa"><a href="<?= $link_google ?>"><?= $link_google ?></a></p>
+                    <!-- campo url gmaps -->
+                    <!-- bloque de codigo -->
+                    <!-- estilos para el modal -->
+                    <style>
+                         * {
+                              margin: 0;
+                              padding: 0;
+                              box-sizing: border-box;
                          }
 
-                         to {
+                         .flex {
+                              width: 100%;
+                              height: 100%;
+                              display: flex;
+                              justify-content: space-between;
+                              align-items: center;
+                         }
+
+                         .textos {
+                              padding: 300px;
+                              color: #fff;
+                              text-align: center;
+                         }
+
+                         .modal {
+                              display: none;
+                              position: fixed;
+                              z-index: 1;
+                              overflow: auto;
+                              left: 0;
                               top: 0;
-                              opacity: 1;
+                              width: 100%;
+                              height: 100%;
+                              background: rgba(0, 0, 0, 0.452);
                          }
-                    }
 
-                    .modal-header,
-                    .footer {
-                         padding: 8px 16px;
-                         background: #34495e;
-                         color: #f2f2f2;
-                    }
-
-                    .modal-body {
-                         padding: 11px 16px;
-
-                    }
-
-                    span {
-                         font-size: 12px;
-                    }
-
-                    @media screen and (max-width:768px) {
                          .contenido-modal {
-                              width: 90%;
+                              position: relative;
+                              background-color: #fefefe;
+                              margin: auto;
+                              width: 60%;
+                              box-shadow: 0 0 6px 0 rgba(0, 0, 0, .4);
+                              animation-name: modal;
+                              animation-duration: 1s;
                          }
 
+                         @keyframes modal {
+                              from {
+                                   top: -330px;
+                                   opacity: 0;
+                              }
 
-                    }
-               </style>
-               <!-- fin de estilos para el modal -->
-               <!-- stylis para el spinner -->
-               <style>
-                    .lds-ring {
-                         display: inline-block;
-                         position: relative;
-                         width: 80px;
-                         height: 80px;
-                    }
-
-                    .lds-ring div {
-                         box-sizing: border-box;
-                         display: block;
-                         position: absolute;
-                         width: 64px;
-                         height: 64px;
-                         margin: 8px;
-                         border: 8px solid #fff;
-                         border-radius: 50%;
-                         animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-                         border-color: #fff transparent transparent transparent;
-                    }
-
-                    .lds-ring div:nth-child(1) {
-                         animation-delay: -0.45s;
-                    }
-
-                    .lds-ring div:nth-child(2) {
-                         animation-delay: -0.3s;
-                    }
-
-                    .lds-ring div:nth-child(3) {
-                         animation-delay: -0.15s;
-                    }
-
-                    @keyframes lds-ring {
-                         0% {
-                              transform: rotate(0deg);
+                              to {
+                                   top: 0;
+                                   opacity: 1;
+                              }
                          }
 
-                         100% {
-                              transform: rotate(360deg);
+                         .modal-header,
+                         .footer {
+                              padding: 8px 16px;
+                              background: #34495e;
+                              color: #f2f2f2;
                          }
-                    }
 
-                    .loader {
-                         width: 100%;
-                         height: 100vh;
-                         background: rgba(0, 0, 0, 0.3);
-                         display: none;
-                         justify-content: center;
-                         align-items: center;
-                         position: fixed;
-                         top: 0;
-                         left: 0;
-                         z-index: 100000;
-                    }
-               </style>
-               <!-- fin de stylos del spinner -->
-               <!-- spinner -->
-               <div class="lds-ring loader">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-               </div>
-               <!-- spinner -->
-               <a href="#" id="abrir" class="button button-primary right">Imprimir Resumen</a>
-               <!-- modal de impresion -->
+                         .modal-body {
+                              padding: 11px 16px;
 
-               <div id="miModal" class="modal">
-                    <div class="flex" id="flex">
-                         <div class="contenido-modal">
-                              <div id="wc-backbone-modal-dialog" id="miModal">
-                                   <div class="wc-backbone-modal wc-order-preview">
-                                        <div class="wc-backbone-modal-content" tabindex="0">
-                                             <section class="wc-backbone-modal-main" role="main" id="datos_modal">
-                                                  <header class="wc-backbone-modal-header">
-                                                       <mark class="order-status status-processing"><span id="m_status">Procesando</span></mark>
-                                                       <h1 id="m_n_pedido">Pedido #1224</h1>
-                                                       <button class="modal-close modal-close-link dashicons dashicons-no-alt" id="close">
-                                                            <!-- <span class="screen-reader-text">Cerrar ventana modal</span> -->
-                                                       </button>
-                                                  </header>
-                                                  <article style="max-height: 481.5px;">
+                         }
 
-                                                       <div class="wc-order-preview-addresses">
-                                                            <div class="wc-order-preview-address">
-                                                                 <h2>Detalles del Cliente</h2>
-                                                                 <strong>Nombre</strong>
-                                                                 <span id="m_cliente"></span>
-                                                                 <strong>Correo electrónico</strong>
-                                                                 <a href="mailto:maximopeoficiales4@gmail.com" id="m_correo">maximopeoficiales4@gmail.com</a>
-                                                                 <strong>Teléfono</strong>
-                                                                 <a href="tel:928644700" id="m_telefono">928644700</a><br>
-                                                                 <strong>Pago mediante</strong>
-                                                                 <span id="m_tipo_mediante">Contra reembolso</span>
+                         span {
+                              font-size: 12px;
+                         }
 
-                                                            </div>
-                                                            <div class="wc-order-preview-address">
-                                                                 <h2>Detalles de envío</h2>
-                                                                 <a href="https://maps.google.com/maps?&amp;q=Av.%20Nicol%C3%A1s%20de%20Pi%C3%A9rola%201491%2C%20Cercado%20de%20Lima%2015001%2C%20Per%C3%BA%2C%2033%2C%20LIMA%2C%20LIM%2C%20%2C%20PE&amp;z=16" target="_blank" id="m_detalles_envio"></a>
+                         @media screen and (max-width:768px) {
+                              .contenido-modal {
+                                   width: 90%;
+                              }
 
-                                                                 <div id="metodo_envio" style="margin-top: 5px;">
-                                                                      <strong>Método de envío</strong>
-                                                                      Se aplicarán costos de envío según tu dirección en la siguiente página.
+
+                         }
+                    </style>
+                    <!-- fin de estilos para el modal -->
+                    <a href="#" id="abrir" class="button button-primary right">Imprimir Resumen</a>
+                    <!-- modal de impresion -->
+
+                    <div id="miModal" class="modal">
+                         <div class="flex" id="flex">
+                              <div class="contenido-modal">
+                                   <div id="wc-backbone-modal-dialog" id="miModal">
+                                        <div class="wc-backbone-modal wc-order-preview">
+                                             <div class="wc-backbone-modal-content" tabindex="0">
+                                                  <section class="wc-backbone-modal-main" role="main" id="datos_modal">
+                                                       <header class="wc-backbone-modal-header">
+                                                            <mark class="order-status status-processing"><span><?= strtoupper($order->status) ?></span></mark>
+                                                            <h1 id="m_n_pedido">Pedido <?= $id_order ?></h1>
+                                                            <button class="modal-close modal-close-link dashicons dashicons-no-alt" id="close">
+                                                                 <!-- <span class="screen-reader-text">Cerrar ventana modal</span> -->
+                                                            </button>
+                                                       </header>
+                                                       <article style="max-height: 481.5px;">
+
+                                                            <div class="wc-order-preview-addresses">
+                                                                 <div class="wc-order-preview-address">
+                                                                      <h2>Detalles del Cliente</h2>
+                                                                      <strong>Nombre</strong>
+                                                                      <span><?= $order->billing->first_name ?></span>
+                                                                      <strong>Correo electrónico</strong>
+                                                                      <a href="<?= $order->billing->email ?>"><?= $order->billing->email ?></a>
+                                                                      <strong>Teléfono</strong>
+                                                                      <a href="tel:<?= $order->billing->phone ?>"><?= $order->billing->phone ?></a><br>
+                                                                      <strong>Pago mediante</strong>
+                                                                      <span><?= strtoupper($order->payment_method_title) ?></span>
+
                                                                  </div>
-                                                                 <br>
-                                                                 <strong>Nota Cliente:</strong>
-                                                                 <span id="m_nota_cliente"></span>
+                                                                 <div class="wc-order-preview-address">
+                                                                      <h2>Detalles de envío</h2>
+                                                                      <a href="<?= $link_google ?>" target="_blank"><?= $link_google ?></a>
+
+                                                                      <div style="margin-top: 5px;">
+                                                                           <strong>Método de envío</strong>
+                                                                           Se aplicarán costos de envío según tu dirección en la siguiente página.
+                                                                      </div>
+                                                                      <br>
+                                                                      <strong>Nota Cliente:</strong>
+                                                                      <span><?= $order->customer_note ?></span>
+                                                                 </div>
                                                             </div>
-                                                       </div>
 
-                                                       <div id="m_tabla_datos"></div>
-                                                       <img src="" width="100%" height="400px" id="imagen_mapa" />
-                                                  </article>
-                                                  <footer>
-                                                       <div class="inner">
+                                                            <div id="m_tabla_datos">
+                                                                 <div class="wc-order-preview-table-wrapper">
+                                                                      <table cellspacing=" 0 " class="wc-order-preview-table">
+                                                                           <thead>
+                                                                                <tr>
+                                                                                     <th class="wc-order -preview-table__column - product">Producto</th>
+                                                                                     <th class="wc-order-preview-table__column - amount">Cantidad</th>
+                                                                                     <th class="wc-order-preview-table__column-- total">Total</th>
+                                                                                </tr>
+                                                                           </thead>
+                                                                           <tbody>
+                                                                                <?php
+                                                                                foreach ($order->line_items as $item) {
+                                                                                ?>
+                                                                                     <tr class="wc-order-preview-table__item wc-order-preview-table__item - 3">
+                                                                                          <td class="wc- order-preview-table__column - product">
+                                                                                               <?= $item->name  ?>
+                                                                                               <div class="wc-order-item-sku"></div>
+                                                                                          </td>
+                                                                                          <td class="wc-order-preview- table__column - cantidad"><?= $item->quantity ?></td>
+                                                                                          <td class="wc-order-preview-table__column - total">
+                                                                                               <span class="woocommerce-Price-amount amount">
+                                                                                                    <span class="woocommerce-Price-currencySymbol"> <?= $order->currency_symbol ?></span> <?= number_format($item->price, 2, ".", "")  ?>
+                                                                                               </span>
+                                                                                          </td>
+                                                                                     </tr>
+                                                                                <?php } ?>
+                                                                           </tbody>
+                                                                      </table>
+                                                                 </div>
+                                                            </div>
+                                                            <img src="https://maps.googleapis.com/maps/api/staticmap?center=<?= $latitud ?>,<?= $longitud ?>&zoom=16&size=600x400&markers=color:red%7C<?= $latitud ?>,<?= $longitud ?>&key=<?= $data["api_key_google_maps"] ?>" width="100%" height="400px" />
+                                                       </article>
+                                                       <footer>
+                                                            <div class="inner">
 
-                                                            <button class="button button-primary button-large" type="button" role="button" aria-label="Imprimir" onclick="imprimirDiv('#datos_modal');">Imprimir</button>
-                                                       </div>
-                                                  </footer>
-                                             </section>
+                                                                 <button class="button button-primary button-large" type="button" role="button" aria-label="Imprimir" onclick="imprimirDiv('#datos_modal');">Imprimir</button>
+                                                            </div>
+                                                       </footer>
+                                                  </section>
+                                             </div>
                                         </div>
                                    </div>
                               </div>
                          </div>
                     </div>
-               </div>
-               <!-- fin de modal -->
-               <!-- peticion ajax ,imagen de google -->
-               <script>
-                    /* funcion ismobile */
-                    function isMobile() {
-                         return (
-                              navigator.userAgent.match(/Android/i) ||
-                              navigator.userAgent.match(/webOS/i) ||
-                              navigator.userAgent.match(/iPhone/i) ||
-                              navigator.userAgent.match(/iPod/i) ||
-                              navigator.userAgent.match(/iPad/i) ||
-                              navigator.userAgent.match(/BlackBerry/i)
-                         );
-                    }
-                    /* funcion para imprimir */
-                    function imprimirDiv(imp1) {
-                         var printContents = document.querySelector(imp1).innerHTML;
-                         w = window.open();
-                         //se puede agregar algunos pequeños estilos
-                         var style = `
-										<style>
-											#status{display:none;}
-											#tipo_servicio{display:none;}
-											h1{font-size:10px;}
-											button{display:none;}
-											img{margin-top:2em;}
-											table {width: 100%; border: 1px solid #000; margin-top:10px; text-align:rigth;}
-											th, td {width: 25%;}
-											#cambiar_estado{display:none;}
-											#edit{display:none;}
-											#metodo_envio{display:none;}
-											#m_status{display:none;}
-											.order-status{display:none;}
-											.inner{display:none;}
-										</style>
-										`;
-                         w.document.write(style + printContents);
-                         /* w.document.close(); // necessary for IE >= 10
-                         w.focus(); // necessary for IE >= 10 */
-                         w.print();
-                         if (!isMobile()) {
-                              w.close();
+                    <!-- fin de modal -->
+                    <script>
+                         /* funcion ismobile */
+                         function isMobile() {
+                              return (
+                                   navigator.userAgent.match(/Android/i) ||
+                                   navigator.userAgent.match(/webOS/i) ||
+                                   navigator.userAgent.match(/iPhone/i) ||
+                                   navigator.userAgent.match(/iPod/i) ||
+                                   navigator.userAgent.match(/iPad/i) ||
+                                   navigator.userAgent.match(/BlackBerry/i)
+                              );
                          }
-                         return true;
-                    }
-                    var resultados_lat, resultados_long;
-                    window.onload = () => {
-                         document.querySelector(".loader").style.display = "flex";
-                         cargarDatos();
-                    }
-
-
-                    //funcion para imprimir un div o seccion
-                    function imprimirDiv(imp1) {
-                         var printContents = document.getElementById(imp1).innerHTML;
-                         w = window.open();
-                         //se puede agregar algunos pequeños estilos 
-                         var style = `
+                         //funcion para imprimir un div o seccion
+                         function imprimirDiv(imp1) {
+                              var printContents = document.getElementById(imp1).innerHTML;
+                              w = window.open();
+                              //se puede agregar algunos pequeños estilos 
+                              var style = `
 									<style>
 										#status{display:none;}
 										#tipo_servicio{display:none;}
@@ -490,164 +448,68 @@ function action_woocommerce_admin_order_data_after_shipping_address()
 										#m_status{display:none;}
 									</style>
 									`;
-                         w.document.write(style + printContents);
-                         /* w.document.close(); // necessary for IE >= 10
-                         w.focus(); // necessary for IE >= 10 */
-                         w.print();
-                         if (!isMobile()) {
-                              w.close();
-                         }
-                         return true;
-                    }
-                    /* siempre cambiar el url dependiendo el dominio */
-                    function cargarDatos() {
-                         function obtenerValorParametro(sParametroNombre) {
-                              var sPaginaURL = window.location.search.substring(1);
-                              var sURLVariables = sPaginaURL.split('&');
-                              for (var i = 0; i < sURLVariables.length; i++) {
-                                   var sParametro = sURLVariables[i].split('=');
-                                   if (sParametro[0] == sParametroNombre) {
-                                        return sParametro[1];
-                                   }
+                              w.document.write(style + printContents);
+                              /* w.document.close(); // necessary for IE >= 10
+                              w.focus(); // necessary for IE >= 10 */
+                              w.print();
+                              if (!isMobile()) {
+                                   w.close();
                               }
-                              return null;
+                              return true;
                          }
-                         let id_servicio = obtenerValorParametro("post");
-                         
-                         let mapa = document.getElementById("imagen_mapa");
-                         (async () => {
-                              let url = `<?php echo get_site_url(); ?>/wp-json/wc/v3/orders/${id_servicio}?consumer_key=<?php echo $data["consumer_key"]; ?>&consumer_secret=<?php echo $data["consumer_secret"]; ?>`;
-                              let data = await fetch(url)
-                              if (data.ok) {
-                                   data = await data.json();
 
-                                   function insert(id, dato) {
-                                        document.getElementById(id).innerText = dato;
-                                   }
-                                   insert("m_status", document.querySelector("#select2-order_status-container").innerText)
-                                   insert("m_n_pedido", `Pedido # ${id_servicio}`);
-                                   insert("m_correo", data.billing.email);
-                                   insert("m_cliente", `${data.billing.first_name} ${data.billing.last_name} `);
-                                   document.getElementById("m_correo").href = `mailto:${data.billing.email}`;
-                                   insert("m_telefono", data.billing.phone);
-                                   document.getElementById("m_telefono").href = `mailto:${data.billing.phone}`;
-                                   insert("m_tipo_mediante", data.payment_method_title.toUpperCase());
-                                   insert("m_nota_cliente", data.customer_note);
-                                   /* creata la tabla */
-                                   let html = `
-							<div class="wc-order-preview-table-wrapper">
-								<table cellspacing=" 0 " class="wc-order-preview-table">
-								<thead>
-									<tr>
-									<th class="wc-order -preview-table__column - product">Producto</th>
-									<th class="wc-order-preview-table__column - amount">Cantidad</th>
-									<th class="wc-order-preview-table__column-- total">Total</th>
-									</tr>
-								</thead>
-								<tbody>
-							
-							`;
-                                   data.line_items.forEach(e => {
-                                        html += `
-											<tr class="wc-order-preview-table__item wc-order-preview-table__item - 3">
-											<td class="wc- order-preview-table__column - product">
-												${e.name}
-												<div class="wc-order-item-sku"></div>
-											</td>
-											<td class="wc-order-preview- table__column - cantidad">${e.quantity}</td>
-											<td class="wc-order-preview-table__column - total">
-												<span class="woocommerce-Price-amount amount">
-												<span class="woocommerce-Price-currencySymbol"> ${data.currency_symbol} </span>  ${e.price.toFixed(2)} 
-												</span>
-											</td>
-											</tr>
-								`;
-                                   });
-                                   html += `</tbody>
-									</table>
-									</div>`;
-                                   /* document.getElementById("m_detalles_envio").insertAdjacentHTML("beforeend", html); */
-                                   document.getElementById("m_tabla_datos").innerHTML = html;
+                         let modal = document.getElementById('miModal');
+                         let flex = document.getElementById('flex');
+                         let abrir = document.getElementById('abrir');
+                         let cerrar = document.getElementById('close');
 
-                                   resultados_lat = data.meta_data[2].value;
-                                   resultados_long = data.meta_data[3].value;
-                                   /* agrego el link de gmaps */
-                                   let div_url_map = document.getElementById("url_mapa");
-                                   let titulo_url_map = document.createElement("strong");
-                                   let br_element = document.createElement("br");
-                                   titulo_url_map.innerText = "Url Gmaps:";
-                                   let enlace = document.createElement("a");
-                                   enlace.setAttribute("target", "_blank");
-                                   /* resultados_lat = datos.latitud;
-                                   resultados_long = datos.longitud; */
-                                   enlace.href = 'https://maps.google.com/?q=' + resultados_lat + ',' + resultados_long;
-                                   enlace.innerHTML = 'https://maps.google.com/?q=' + resultados_lat + ',' + resultados_long;
-                                   /* fin de propiedades */
-                                   /* agrego al DOM */
-                                   div_url_map.appendChild(titulo_url_map);
-                                   div_url_map.appendChild(br_element);
-                                   div_url_map.appendChild(enlace);
-                                   /* fin de agregao al DOM */
-                                   mapa.src = `https://maps.googleapis.com/maps/api/staticmap?center=${resultados_lat},${resultados_long}&zoom=16&size=600x400&markers=color:red%7C${resultados_lat},${resultados_long}&key=<?php echo $data["api_key_google_maps"]; ?>`;
+                         function isMobile() {
+                              return (
+                                   (navigator.userAgent.match(/Android/i)) ||
+                                   (navigator.userAgent.match(/webOS/i)) ||
+                                   (navigator.userAgent.match(/iPhone/i)) ||
+                                   (navigator.userAgent.match(/iPod/i)) ||
+                                   (navigator.userAgent.match(/iPad/i)) ||
+                                   (navigator.userAgent.match(/BlackBerry/i))
+                              );
+                         }
 
-                                   /* fin de agrego de link de gmaps */
-                                   document.querySelector(".loader").style.display = "none";
-                              }
-                         })()
+                         abrir.addEventListener('click', function() {
+                              modal.style.display = 'block';
+                              document.querySelector("#wc-backbone-modal-dialog").style.display = "none";
 
-                    }
-                    let modal = document.getElementById('miModal');
-                    let flex = document.getElementById('flex');
-                    let abrir = document.getElementById('abrir');
-                    let cerrar = document.getElementById('close');
-
-                    function isMobile() {
-                         return (
-                              (navigator.userAgent.match(/Android/i)) ||
-                              (navigator.userAgent.match(/webOS/i)) ||
-                              (navigator.userAgent.match(/iPhone/i)) ||
-                              (navigator.userAgent.match(/iPod/i)) ||
-                              (navigator.userAgent.match(/iPad/i)) ||
-                              (navigator.userAgent.match(/BlackBerry/i))
-                         );
-                    }
-
-                    abrir.addEventListener('click', function() {
-                         modal.style.display = 'block';
-                         document.querySelector("#wc-backbone-modal-dialog").style.display = "none";
-
-                         document.querySelector("#wc-backbone-modal-dialog").style.display = "";
+                              document.querySelector("#wc-backbone-modal-dialog").style.display = "";
 
 
 
 
-                         document.querySelector(".woocommerce-layout__header").style.display = 'none';
-                         /* if (isMobile()) { */
-                         document.querySelector("#wpadminbar").style.display = 'none';
-                         /* } */
-                    });
+                              document.querySelector(".woocommerce-layout__header").style.display = 'none';
+                              /* if (isMobile()) { */
+                              document.querySelector("#wpadminbar").style.display = 'none';
+                              /* } */
+                         });
 
-                    cerrar.addEventListener('click', function(e) {
-                         e.preventDefault();
-                         modal.style.display = 'none';
-                         document.querySelector(".woocommerce-layout__header").style.display = '';
-                         /* if (isMobile()) { */
-                         document.querySelector("#wpadminbar").style.display = '';
-                         /* 	} */
-                    });
-
-                    window.addEventListener('click', function(e) {
-                         if (e.target == flex) {
+                         cerrar.addEventListener('click', function(e) {
+                              e.preventDefault();
                               modal.style.display = 'none';
                               document.querySelector(".woocommerce-layout__header").style.display = '';
+                              /* if (isMobile()) { */
+                              document.querySelector("#wpadminbar").style.display = '';
+                              /* 	} */
+                         });
 
-                         }
-                    });
-               </script>
-               <!-- peticion ajax ,imagen de google -->
-               <!-- fin de bloque de codigo -->
+                         window.addEventListener('click', function(e) {
+                              if (e.target == flex) {
+                                   modal.style.display = 'none';
+                                   document.querySelector(".woocommerce-layout__header").style.display = '';
 
-          <?php } ?>
+                              }
+                         });
+                    </script>
+                    <!-- fin de bloque de codigo -->
+
+          <?php  }
+          } ?>
 
 
 <?php }
@@ -692,5 +554,61 @@ function my_custom_head_js()
 
 add_action('wp_footer', 'my_custom_js');
 add_action('wp_head', 'my_custom_head_js');
+add_action('woocommerce_webhook_delivery', 'max_function_webhook_custom', 1, 5);
+function max_function_webhook_custom($http_args, $response, $duration, $arg, $id)
+{
+     /* get_site_url(); */
+     function arrayToXml($array, &$xml)
+     {
+          foreach ($array as $key => $value) {
+               if (is_array($value)) {
+                    if (is_int($key)) {
+                         $key = "e";
+                    }
+                    $label = $xml->addChild($key);
+                    arrayToXml($value, $label);
+               } else {
+                    $xml->addChild($key, $value);
+               }
+          }
+          return $xml;
+     }
+     function getUrlWebhook($id_wb)
+     {
+          $woocommerce = max_functions_getWoocommerce();
+          $data = $woocommerce->get("webhooks/$id_wb");
+          return $data->delivery_url;
+     }
+     function execWebHook($data, $urlSend)
+     {
+          $array = json_decode($data, true);
+          $xml = new SimpleXMLElement('<root/>');
+          $newXml = arrayToXml($array, $xml);
+          $curl = curl_init();
+          curl_setopt_array($curl, array(
+               CURLOPT_URL => $urlSend,
+               CURLOPT_RETURNTRANSFER => true,
+               CURLOPT_ENCODING => "",
+               CURLOPT_MAXREDIRS => 10,
+               CURLOPT_TIMEOUT => 0,
+               CURLOPT_FOLLOWLOCATION => true,
+               CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+               CURLOPT_CUSTOMREQUEST => "POST",
+               CURLOPT_POSTFIELDS => $newXml->asXML(),
+               CURLOPT_HTTPHEADER => array(
+                    "Content-Type: application/xml"
+               ),
+          ));
+          $response = curl_exec($curl);
+          curl_close($curl);
+          echo $response;
+     }
+     $idWebHook = $http_args['headers']['X-WC-Webhook-ID'];
+     $urlSend = getUrlWebhook($idWebHook);
+     $data = $http_args["body"];
+     execWebHook($data, $urlSend);
+}
+
+
 
 ?>

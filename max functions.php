@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/vendor/autoload.php';
 
 /* 
      Plugin Name: Max Functions 
@@ -48,7 +49,7 @@ function max_functions_init()
 		'label' => __('Max Functions', 'max_functions'), /* nombre del boton */
 		/*   'description' => __('Clases para el Sitio Web', 'max_functions'), */
 		'labels' => $labels,
-		'supports' => array( ''),
+		'supports' => array(''),
 		'hierarchical' => false, /* false porque no tiene un padre quien le asigne un template*/
 		'public' => true,
 		'show_ui' => true,
