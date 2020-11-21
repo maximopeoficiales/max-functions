@@ -1,10 +1,11 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
+error_reporting(0);
 
 /* 
      Plugin Name: Max Functions 
      Plugin URI:
-     Description: A帽ade endpoints y modificaciones necesarios para maxco-proyect
+     Description: Añade endpoints y modificaciones necesarios para maxco-proyect
      Version: 1.0.0
      Author Uri: Maximo Junior Apaza Chirhuana
      Text Domain: Max Functions
@@ -42,7 +43,7 @@ function max_functions_init()
 		'insert_into_item' => __('Insertar en Clase', 'max_functions'),
 		'uploaded_to_this_item' => __('Agregado en Clase', 'max_functions'),
 		'items_list' => __('Lista de Configuraciones', 'max_functions'),
-		'items_list_navigation' => __('Navegaci贸n de Configuraciones', 'max_functions'),
+		'items_list_navigation' => __('Navegación de Configuraciones', 'max_functions'),
 		'filter_items_list' => __('Filtrar Configuracion', 'max_functions'),
 	);
 	$args = array(
@@ -71,4 +72,7 @@ add_action('init', 'max_functions_init', 0);
 
 
 
-include 'inc/woo-functions.php';
+require 'inc/woo-functions.php';
+require 'inc/endpoints.php';
+
+
