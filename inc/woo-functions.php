@@ -176,7 +176,7 @@ function order_preview_template()
                                              <a class="button button-primary button-large" aria-label="<?php esc_attr_e('Edit this order', 'woocommerce'); ?>" href="<?php echo esc_url(admin_url('post.php?action=edit')); ?>&post={{ data.data.id }}"><?php esc_html_e('Edit', 'woocommerce'); ?></a>
                                                        <!--    <button class="button button-primary button-large" type="button" role="button" aria-label="Imprimir" onclick="imprimirDiv('#datos_modal');">Imprimir</button> -->
                                                        <button class="button button-primary button-large" type="submit" role="button" aria-label="Imprimir">Imprimir</button>
-                                                       <input type="hidden" name="me_post_pdf" value="submitted">
+                                                       <input type="hidden" name="me_post_pdf" value="imprimir1">
                                                        <input type="hidden" name="id_order" value="{{data.data.id}}">
                                         </div>
                                    </form>	
@@ -312,6 +312,7 @@ function action_woocommerce_admin_order_data_after_shipping_address()
                               }
                          </style>
                          <!-- fin de estilos para el modal -->
+                         <input type="hidden" name="dato_vacio" value="1">
                          <a href="#" id="abrir" class="button button-primary right">Imprimir Resumen</a>
                          <!-- modal de impresion -->
 
@@ -451,7 +452,7 @@ function action_woocommerce_admin_order_data_after_shipping_address()
                                                                       <div class="inner">
                                                                            <!--    <button class="button button-primary button-large" type="button" role="button" aria-label="Imprimir" onclick="imprimirDiv('#datos_modal');">Imprimir</button> -->
                                                                            <button class="button button-primary button-large" type="submit" role="button" aria-label="Imprimir">Imprimir</button>
-                                                                           <input type="hidden" name="me_post_pdf" value="submitted">
+                                                                           <input type="hidden" name="me_post_pdf" value="imprimir1">
                                                                            <input type="hidden" name="id_order" value="<?= $id_order ?>">
                                                                       </div>
                                                                  </form>
@@ -500,6 +501,14 @@ function action_woocommerce_admin_order_data_after_shipping_address()
                                         document.querySelector(".woocommerce-layout__header").style.display = '';
 
                                    }
+                              });
+
+                              var btnac = document.getElementsByName("save")[0];
+                              btnac.addEventListener("mouseover", () => {
+                                   document.getElementsByName("me_post_pdf")[0].value = "";
+                              });
+                              btnac.addEventListener("mouseout", () => {
+                                   document.getElementsByName("me_post_pdf")[0].value = "imprimir1";
                               });
                          </script>
                          <!-- fin de bloque de codigo -->
@@ -642,7 +651,7 @@ function additional_paragraph_after_billing_address_12($field, $key, $args, $val
 
 function me_post_pdf()
 {
-     if (isset($_POST['me_post_pdf']) && isset($_POST['id_order'])) {
+     if ($_POST['me_post_pdf'] == "imprimir1" && isset($_POST['id_order'])) {
           $options = new Options();
           $options->set('isHtml5ParserEnabled', true);
           $options->set('isRemoteEnabled', true);
